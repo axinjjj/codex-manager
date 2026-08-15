@@ -493,6 +493,15 @@ def _measure_path(path):
     files = 0
     md_files = 0
     size = 0
+    if os.path.islink(path):
+        try:
+            return {
+                'Bytes': os.lstat(path).st_size,
+                'Files': 1,
+                'Md': 1 if str(path).lower().endswith('.md') else 0,
+            }
+        except OSError:
+            return {'Bytes': 0, 'Files': 0, 'Md': 0}
     if os.path.isfile(path):
         try:
             size = os.path.getsize(path)
@@ -505,7 +514,10 @@ def _measure_path(path):
         for name in names:
             fp = os.path.join(dp, name)
             try:
-                size += os.path.getsize(fp)
+                if os.path.islink(fp):
+                    size += os.lstat(fp).st_size
+                else:
+                    size += os.path.getsize(fp)
                 files += 1
                 if name.lower().endswith('.md'):
                     md_files += 1
