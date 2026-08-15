@@ -111,6 +111,20 @@ class ManagerContractTests(unittest.TestCase):
         self.assertIn('Codex 库存仪表盘', html)
         self.assertIn('demo-skill', html)
 
+    def test_inventory_does_not_charge_symlink_targets_to_junk(self):
+        target = self.home / 'large-helper'
+        target.write_bytes(b'x' * 2 * 1024 * 1024)
+        link = self.root / 'tmp' / 'helper'
+        try:
+            link.symlink_to(target)
+        except (OSError, NotImplementedError) as error:
+            self.skipTest(f'symlinks unavailable: {error}')
+
+        report = manager.build_inventory(self.root)
+
+        self.assertLess(report['junkMB'], 1)
+        self.assertEqual(report['catTotals']['junk']['Files'], 2)
+
     def test_inventory_refuses_to_write_inside_the_selected_root(self):
         output = self.root / 'inventory.html'
         with self.assertRaisesRegex(ValueError, '不能写进被扫描的 Codex 目录'):
