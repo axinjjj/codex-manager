@@ -1,0 +1,67 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>Codex 库存仪表盘</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Microsoft YaHei",system-ui,sans-serif; background:#0f1115; color:#e6e8ee; padding:28px; }
+  h1 { font-size:22px; margin-bottom:4px; }
+  .sub { color:#8a90a0; font-size:13px; margin-bottom:22px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:14px; margin-bottom:24px; }
+  .card { background:#171a21; border:1px solid #262b36; border-radius:12px; padding:16px 18px; }
+  .card .label { font-size:12px; color:#8a90a0; margin-bottom:6px; }
+  .card .value { font-size:24px; font-weight:700; }
+  .card .hint { font-size:12px; color:#8a90a0; margin-top:4px; }
+  .light { display:inline-block; padding:6px 16px; border-radius:999px; font-weight:700; font-size:14px; }
+  .green { background:#0e3b26; color:#4ade80; }
+  .yellow { background:#3b2f0e; color:#fbbf24; }
+  .red { background:#3b0e0e; color:#f87171; }
+  h2 { font-size:16px; margin:26px 0 12px; color:#c9cede; }
+  table { width:100%; border-collapse:collapse; background:#171a21; border-radius:12px; overflow:hidden; font-size:13px; }
+  th,td { padding:10px 14px; text-align:left; border-bottom:1px solid #232833; }
+  th { color:#8a90a0; font-weight:600; font-size:12px; }
+  tr:last-child td { border-bottom:none; }
+  td.num { font-variant-numeric:tabular-nums; text-align:right; }
+  .badge { display:inline-block; padding:2px 10px; border-radius:999px; font-size:12px; }
+  .b-core { background:#12324a; color:#7dd3fc; }
+  .b-managed { background:#2a2440; color:#c4b5fd; }
+  .b-junk { background:#402a1a; color:#fdba74; }
+  .b-history { background:#1a3328; color:#6ee7b7; }
+  .b-other { background:#333; color:#ccc; }
+  .note { color:#8a90a0; font-size:12px; }
+  .skill { display:inline-block; background:#171a21; border:1px solid #262b36; border-radius:8px; padding:8px 14px; margin:0 8px 8px 0; font-size:13px; }
+  .skill b { color:#7dd3fc; }
+</style>
+</head>
+<body>
+<h1>Codex 库存仪表盘</h1>
+<div class="sub">扫描位置：~/.codex ｜ 生成时间：<span id="t"></span></div>
+<div id="statusline" style="margin-bottom:18px"></div>
+<div class="cards" id="cards"></div>
+<h2>各目录明细（按占用排序）</h2>
+<table id="tbl"><thead><tr><th>目录</th><th>分类</th><th style="text-align:right">占用 MB</th><th style="text-align:right">文件数</th><th style="text-align:right">md 数</th><th>说明</th></tr></thead><tbody></tbody></table>
+<h2>正式 Skills（这些是你的资产）</h2>
+<div id="skills"></div>
+<div class="note" id="skillnote" style="margin-top:8px"></div>
+<script>
+const D = {"generatedAt":"2026-08-14 11:09:44","totalMB":4013.2,"totalFiles":24874,"totalMd":1143,"junkMB":0,"junkMd":0,"status":"green","statusText":"干净，无需清理","catTotals":{"history":{"Md":667,"MB":3128.6,"Files":20775},"core":{"Md":162,"MB":3.51,"Files":366},"managed":{"Md":285,"MB":829.3,"Files":1801},"junk":{"Md":0,"MB":0,"Files":3},"other":{"Md":29,"MB":51.8,"Files":1929}},"dirs":[{"Name":".sandbox","Cat":"managed","MB":5.3,"Files":39,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":".sandbox-bin","Cat":"managed","MB":281.1,"Files":2,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":".sandbox-secrets","Cat":"managed","MB":0,"Files":1,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":".tmp\\市场源","Cat":"managed","MB":65.2,"Files":841,"Md":113,"Note":"插件市场源，config.toml 在用，别动"},{"Name":".tmp\\其他残留","Cat":"junk","MB":0,"Files":2,"Md":0,"Note":"插件暂存残留，可清"},{"Name":"ambient-suggestions","Cat":"managed","MB":0.1,"Files":6,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"archived_sessions","Cat":"history","MB":0,"Files":0,"Md":0,"Note":"聊天历史/生成物，删不删你决定"},{"Name":"attachments","Cat":"history","MB":0.2,"Files":10,"Md":0,"Note":"聊天历史/生成物，删不删你决定"},{"Name":"browser","Cat":"managed","MB":0,"Files":55,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"cache","Cat":"managed","MB":84.7,"Files":24,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"codex-remote-attachments","Cat":"history","MB":1.2,"Files":10,"Md":0,"Note":"聊天历史/生成物，删不删你决定"},{"Name":"computer-use","Cat":"managed","MB":0,"Files":1,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"dictation-history","Cat":"history","MB":0,"Files":1,"Md":0,"Note":"聊天历史/生成物，删不删你决定"},{"Name":"generated_images","Cat":"history","MB":105,"Files":92,"Md":0,"Note":"聊天历史/生成物，删不删你决定"},{"Name":"mcp-oauth-locks","Cat":"managed","MB":0,"Files":3,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"memories","Cat":"core","MB":3.1,"Files":300,"Md":136,"Note":"正式资产，所有 AI 读它"},{"Name":"node_repl","Cat":"managed","MB":0,"Files":0,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"pets","Cat":"managed","MB":0,"Files":0,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"plugins","Cat":"managed","MB":383.8,"Files":809,"Md":172,"Note":"系统自管，删了会重建或出错"},{"Name":"process_manager","Cat":"managed","MB":0.1,"Files":1,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"rules","Cat":"core","MB":0,"Files":1,"Md":0,"Note":"正式资产，所有 AI 读它"},{"Name":"secrets","Cat":"managed","MB":0,"Files":1,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"sessions","Cat":"history","MB":2381.5,"Files":326,"Md":0,"Note":"聊天历史/生成物，删不删你决定"},{"Name":"skills","Cat":"core","MB":0.4,"Files":63,"Md":25,"Note":"正式资产，所有 AI 读它"},{"Name":"sqlite","Cat":"managed","MB":9,"Files":14,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"thread-writer-locks","Cat":"managed","MB":0,"Files":3,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"tmp","Cat":"junk","MB":0,"Files":1,"Md":0,"Note":"任务残留，可安全清理"},{"Name":"vendor_imports","Cat":"managed","MB":0,"Files":1,"Md":0,"Note":"系统自管，删了会重建或出错"},{"Name":"visualizations","Cat":"history","MB":640.7,"Files":20336,"Md":667,"Note":"聊天历史/生成物，删不删你决定"},{"Name":"worktrees","Cat":"other","MB":51.8,"Files":1929,"Md":29,"Note":"未分类，需人工看一眼"},{"Name":"AGENTS.md","Cat":"core","MB":0.01,"Files":1,"Md":1,"Note":"正式配置文件"},{"Name":"config.toml","Cat":"core","MB":0,"Files":1,"Md":0,"Note":"正式配置文件"}],"formalSkills":[{"Name":"grill-me","Md":1,"KB":0},{"Name":"grilling","Md":1,"KB":0}],"systemSkills":6,"pluginSkillMd":31};
+if (!Array.isArray(D.dirs)) D.dirs = D.dirs ? [D.dirs] : [];
+if (!Array.isArray(D.formalSkills)) D.formalSkills = D.formalSkills ? [D.formalSkills] : [];
+D.dirs.sort((a,b)=>b.MB-a.MB);
+const catName = { core:'核心配置', managed:'系统托管', junk:'临时垃圾', history:'历史记录', other:'未分类' };
+document.getElementById('t').textContent = D.generatedAt;
+document.getElementById('statusline').innerHTML = '<span class="light '+D.status+'">'+D.statusText+'</span> <span class="note" style="margin-left:10px">垃圾区：'+D.junkMd+' 条 md / '+D.junkMB+' MB（阈值：50 条或 100 MB 变红）</span>';
+const cards = [
+  { label:'总占用', value:D.totalMB.toLocaleString()+' MB', hint:'文件 '+D.totalFiles.toLocaleString()+' 个' },
+  { label:'md 总数', value:D.totalMd.toLocaleString(), hint:'含系统托管缓存' },
+  { label:'核心配置 md', value:D.catTotals.core.Md, hint:'你的正式资产' },
+  { label:'垃圾 md', value:D.junkMd, hint:D.junkMB+' MB' },
+];
+document.getElementById('cards').innerHTML = cards.map(c=>'<div class="card"><div class="label">'+c.label+'</div><div class="value">'+c.value+'</div><div class="hint">'+c.hint+'</div></div>').join('');
+document.querySelector('#tbl tbody').innerHTML = D.dirs.map(d=>'<tr><td>'+d.Name+'</td><td><span class="badge b-'+d.Cat+'">'+catName[d.Cat]+'</span></td><td class="num">'+d.MB.toLocaleString()+'</td><td class="num">'+d.Files.toLocaleString()+'</td><td class="num">'+d.Md.toLocaleString()+'</td><td class="note">'+d.Note+'</td></tr>').join('');
+document.getElementById('skills').innerHTML = D.formalSkills.map(s=>'<span class="skill"><b>'+s.Name+'</b> | '+s.Md+' md | '+s.KB+' KB</span>').join('') || '<span class="note">无</span>';
+document.getElementById('skillnote').textContent = '另有系统内置 skills '+D.systemSkills+' 个（.system，勿动）；插件缓存里的 SKILL.md 副本 '+D.pluginSkillMd+' 份（插件自带文档，不是垃圾，别手动删）。';
+</script>
+</body>
+</html>

@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """Codex 配置管理器 v2"""
 import argparse, http.server, json, os, shutil, hashlib, urllib.parse, urllib.request, webbrowser, threading, datetime, re, sys, tempfile
 from pathlib import Path
@@ -273,8 +273,11 @@ async function loadDir(p){
     d.entries.forEach(e=>el.appendChild(mkRow(e)));
     return;
   }
-  const desc={'AGENTS.md':'自定义指令：你和 AI 的相处规则','config.toml':'主设置：模型、插件开关都在这','default.rules':'行为规则','opencodex-catalog.json':'模型目录（OpenCodex 生成）','MEMORY.md':'记忆注册表（找记忆的索引）','memory_summary.md':'记忆总览','raw_memories.md':'原始记忆仓库','memories':'全部记忆文件','extensions':'记忆扩展区（人机合写）','rollout_summaries':'每次任务的总结存档','skills':'你安装的技能','rules':'行为规则目录','grill-me':'拷问模式：AI 连环追问你的计划直到漏洞无处可藏','grilling':'压力测试你的想法，AI 不停反问','.system':'系统内置技能（别动）','imagegen':'系统技能：画图','openai-docs':'系统技能：OpenAI 文档问答','plugin-creator':'系统技能：创建插件','review-agent':'系统技能：代码审查','skill-creator':'系统技能：创建新技能','skill-installer':'系统技能：安装技能','.codex-system-skills.marker':'系统标记文件','sessions':'聊天记录存档','archived_sessions':'旧聊天归档','visualizations':'生成的可视化页面','generated_images':'生成的图片','attachments':'聊天附件','codex-remote-attachments':'远程附件','dictation-history':'语音输入历史','plugins':'插件缓存（系统自装自管）','cache':'系统缓存','.sandbox-bin':'沙盒运行环境','.sandbox':'沙盒数据','.sandbox-secrets':'沙盒密钥','sqlite':'小数据库','.tmp':'插件市场源+临时残留','tmp':'任务临时残留','worktrees':'Haven 等项目的工作区副本','browser':'浏览器数据','computer-use':'电脑控制组件','mcp-oauth-locks':'MCP 登录锁','node_repl':'JS 运行环境','pets':'小彩蛋','process_manager':'进程管理','secrets':'密钥','thread-writer-locks':'写入锁','ambient-suggestions':'建议功能数据','vendor_imports':'第三方组件','shell_snapshots':'终端快照','log':'日志','auth.json':'登录凭证（千万别删！）','models_cache.json':'模型信息缓存','session_index.jsonl':'会话索引','transcription-history.jsonl':'语音转写历史','external_agent_session_imports.json':'外部会话导入记录','installation_id':'安装标识','cap_sid':'系统标识','opencodex.config.toml':'OpenCodex 的配置','opencodex-journal.json':'OpenCodex 的日志'};
-  function descFor(n){
+  const desc={'AGENTS.md':'自定义指令：你和 AI 的相处规则','config.toml':'主设置：模型、插件开关都在这','default.rules':'行为规则','opencodex-catalog.json':'模型目录（OpenCodex 生成）','MEMORY.md':'记忆注册表（找记忆的索引）','memory_summary.md':'记忆总览','raw_memories.md':'原始记忆仓库','memories':'全部记忆文件','extensions':'记忆扩展区（人机合写）','rollout_summaries':'每次任务的总结存档','skills':'你安装的技能','rules':'行为规则目录','grill-me':'拷问模式：AI 连环追问你的计划直到漏洞无处可藏','grilling':'压力测试你的想法，AI 不停反问','havenskill':'Haven 手册：架构入口、上线流程、检查规矩','vpsskill':'VPS 手册：连接方法、域名、节点、部署纪律','memoryskill':'记忆库手册：结构、整理规矩、快照管理','.system':'系统内置技能（别动）','imagegen':'系统技能：画图','openai-docs':'系统技能：OpenAI 文档问答','plugin-creator':'系统技能：创建插件','review-agent':'系统技能：代码审查','skill-creator':'系统技能：创建新技能','skill-installer':'系统技能：安装技能','.codex-system-skills.marker':'系统标记文件','sessions':'聊天记录存档','archived_sessions':'旧聊天归档','visualizations':'生成的可视化页面','generated_images':'生成的图片','attachments':'聊天附件','codex-remote-attachments':'远程附件','dictation-history':'语音输入历史','plugins':'插件缓存（系统自装自管）','cache':'系统缓存','.sandbox-bin':'沙盒运行环境','.sandbox':'沙盒数据','.sandbox-secrets':'沙盒密钥','sqlite':'小数据库','.tmp':'插件市场源+临时残留','tmp':'任务临时残留','worktrees':'Haven 等项目的工作区副本','browser':'浏览器数据','computer-use':'电脑控制组件','mcp-oauth-locks':'MCP 登录锁','node_repl':'JS 运行环境','pets':'小彩蛋','process_manager':'进程管理','secrets':'密钥','thread-writer-locks':'写入锁','ambient-suggestions':'建议功能数据','vendor_imports':'第三方组件','shell_snapshots':'终端快照','log':'日志','auth.json':'登录凭证（千万别删！）','models_cache.json':'模型信息缓存','session_index.jsonl':'会话索引','transcription-history.jsonl':'语音转写历史','external_agent_session_imports.json':'外部会话导入记录','installation_id':'安装标识','cap_sid':'系统标识','opencodex.config.toml':'OpenCodex 的配置','opencodex-journal.json':'OpenCodex 的日志'};
+  function descFor(n,p){
+    if(n==='skills'&&p==='memories/skills')return '经验手册（记忆蒸馏的口诀，不是装备技能）';
+    if(n==='.git'&&p==='memories/.git')return '记忆库的快照仓库（后悔药，别动）';
+    if(n==='rollout_summaries'&&p==='memories/rollout_summaries')return '任务小票存档（已清空，留空壳备用）';
     if(desc[n])return desc[n];
     if(n.indexOf('.sqlite')>-1)return '系统数据库文件';
     if(n.indexOf('.bak')>-1)return '配置备份';
@@ -285,7 +288,7 @@ async function loadDir(p){
   }
   function makeRow(e,canTrash){
     const r=document.createElement('div');r.className='row';
-    const dd=descFor(e.name);
+    const dd=descFor(e.name,e.path);
     r.innerHTML='<span class="nm">'+(e.isDir?'📁 ':'📄 ')+esc(e.name)+(dd?' <span style="color:#889;font-size:11px">— '+esc(dd)+'</span>':'')+'</span><span class="prov">'+(e.isDir?'':(e.size/1024).toFixed(1)+'KB')+'</span>';
     if(canTrash&&!appMeta.readOnly){
       const t=document.createElement('span');t.className='trash';t.textContent='🗑';
