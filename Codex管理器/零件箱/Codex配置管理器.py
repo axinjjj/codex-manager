@@ -13,6 +13,8 @@ VIEW_CAP = 3 * 1024 * 1024
 EDIT_CAP = 512 * 1024
 TRANSLATE_URL = 'http://127.0.0.1:10100/v1/chat/completions'
 TRANSLATE_MODEL = 'kimi/k3[1m]'
+TRANSLATE_CACHE = os.path.join(BASE, '翻译缓存.json')
+TRANSLATE_CACHE_LOCK = threading.Lock()
 
 MANAGED = {'plugins','cache','.sandbox-bin','.sandbox','.sandbox-secrets','sqlite','vendor_imports','node_repl','mcp-oauth-locks','process_manager','thread-writer-locks','ambient-suggestions','browser','computer-use','secrets','pets','shell_snapshots','log'}
 HISTORY = {'sessions','archived_sessions','visualizations','generated_images','attachments','codex-remote-attachments','dictation-history'}
@@ -107,9 +109,34 @@ description: （一句话写清楚：这个技能什么时候用。越具体，A
 - （可选）有什么坑要避开
 '''
 
+def _load_translation_cache():
+    try:
+        with open(TRANSLATE_CACHE, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        return data if isinstance(data, dict) else {}
+    except (FileNotFoundError, OSError, UnicodeError, json.JSONDecodeError):
+        return {}
+
+def _save_translation_cache(data):
+    temp_path = TRANSLATE_CACHE + '.tmp'
+    os.makedirs(os.path.dirname(TRANSLATE_CACHE), exist_ok=True)
+    try:
+        with open(temp_path, 'w', encoding='utf-8', newline='') as f:
+            json.dump(data, f, ensure_ascii=False)
+        os.replace(temp_path, TRANSLATE_CACHE)
+    except OSError:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+        raise
+
 def do_translate(text, to):
     if len(text) > 20000:
         return {'ok': False, 'error': '内容超过 2 万字符，太长了一次翻不完，可以分段翻'}
+    fingerprint = hashlib.sha256(text.encode('utf-8')).hexdigest()
+    with TRANSLATE_CACHE_LOCK:
+        cached = _load_translation_cache().get(fingerprint, {}).get(to)
+    if isinstance(cached, str) and cached:
+        return {'ok': True, 'text': cached, 'cached': True}
     if to == 'zh':
         prompt = '把以下内容翻译成中文。如果内容是代码或配置文件，保持键名和代码原样，在每段下方用中文解释它的作用；如果是普通文章，直接输出流畅的中文译文。不要输出额外说明：' + chr(10) + chr(10) + text
     else:
@@ -123,7 +150,15 @@ def do_translate(text, to):
         out = d.get('choices', [{}])[0].get('message', {}).get('content', '')
         if not out:
             return {'ok': False, 'error': '翻译代理返回了空结果'}
-        return {'ok': True, 'text': out}
+        result = {'ok': True, 'text': out, 'cached': False}
+        try:
+            with TRANSLATE_CACHE_LOCK:
+                cache = _load_translation_cache()
+                cache.setdefault(fingerprint, {})[to] = out
+                _save_translation_cache(cache)
+        except OSError as e:
+            result['cacheError'] = str(e)
+        return result
     except Exception as e:
         return {'ok': False, 'error': '翻译引擎没响应（本机 10100 代理可能没开）：' + str(e)}
 HTML = r'''<!DOCTYPE html>
@@ -291,7 +326,7 @@ async function loadDir(p){
     const dd=descFor(e.name,e.path);
     r.innerHTML='<span class="nm">'+(e.isDir?'📁 ':'📄 ')+esc(e.name)+(dd?' <span style="color:#889;font-size:11px">— '+esc(dd)+'</span>':'')+'</span><span class="prov">'+(e.isDir?'':(e.size/1024).toFixed(1)+'KB')+'</span>';
     if(canTrash&&!appMeta.readOnly){
-      const t=document.createElement('span');t.className='trash';t.textContent='🗑';
+      const t=document.createElement('span');t.className='trash';t.textContent='🗑';t.title='删除 '+e.name;t.setAttribute('role','button');t.setAttribute('aria-label','删除 '+e.name);
       t.onclick=async(ev)=>{ev.stopPropagation();if(!confirm('删除 '+e.name+'？进隔离区可捞回。'))return;const rr=await api('/api/delete',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:e.path})});toast(rr.ok?'已移入隔离区':('失败：'+rr.error));if(rr.ok)r.remove();};
       r.appendChild(t);
     }
@@ -346,7 +381,7 @@ async function loadDir(p){
       cb.onclick=async(ev)=>{ev.stopPropagation();const warn=g.clean==='junk'?'确定清空全部临时垃圾？（进隔离区可捞回）':'确定清空全部历史记录？包括旧聊天归档和生成的图片（进隔离区可捞回，但旧聊天里的图会打不开，想清楚！）';if(!confirm(warn))return;toast('清理中…');const rr=await api('/api/clean_group',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({cat:g.clean})});toast(rr.ok?('已清理 '+rr.moved+' 项，全在隔离区'):('失败：'+rr.error));loadDir('');};
       h.appendChild(cb);
     }
-    g.items.forEach(e=>box.appendChild(makeRow(e,!!g.clean)));
+    g.items.forEach(e=>box.appendChild(makeRow(e,!!g.clean||(g.key==='skill'&&e.isDir&&!e.name.startsWith('.')))));
     el.appendChild(h);el.appendChild(box);
   });
 }
@@ -395,8 +430,10 @@ async function runTranslate(text,to){
   box.innerHTML='<div class="trans"><div class="t-head">🌐 翻译中，内容多的话要等几十秒…</div></div>';
   const r=await api('/api/translate',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({text,to})});
   if(r.ok){
-    box.innerHTML='<div class="trans"><div class="t-head">🌐 中文翻译（只是预览，不会改动原文件）：</div><pre></pre></div>';
+    const source=r.cached?'本地缓存，秒开':'刚刚翻译并已缓存';
+    box.innerHTML='<div class="trans"><div class="t-head">🌐 中文翻译（'+source+'；只是预览，不会改动原文件）：</div><pre></pre></div>';
     box.querySelector('pre').textContent=r.text;
+    if(r.cacheError)toast('翻译完成，但本地缓存保存失败：'+r.cacheError);
   } else {
     box.innerHTML='<div class="trans"><div class="t-head" style="color:#f87171">'+esc(r.error)+'</div></div>';
   }

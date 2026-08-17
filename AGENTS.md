@@ -8,7 +8,7 @@
 
 单文件应用：前端页面（HTML/JS）和后端 API 都在 `Codex管理器/零件箱/Codex配置管理器.py` 一个文件里。
 
-- 翻译功能：`do_translate(text, to)` 函数 + `/api/translate` 接口；依赖本机 127.0.0.1:10100 的 AI 代理，没有代理时翻译不可用、其他功能正常
+- 翻译功能：`do_translate(text, to)` 函数 + `/api/translate` 接口；按原文指纹缓存到被 Git 忽略的 `零件箱/翻译缓存.json`，未命中时依赖本机 127.0.0.1:10100 的 AI 代理
 - 文件操作：`/api/save`、`/api/delete`、`/api/restore`、`/api/purge_item`；删除一律进「隔离区」（不真删）
 - skill 列表：前端用 `/api/list?path=skills` 渲染；新建走 `/api/new_skill` + `/api/skill_template`；**skill 删除按钮可直接复用 `/api/delete`**
 - 一键清理：`/api/clean_group`；md 查重：`/api/dups`；分类逻辑在 `classify(rel)` 和顶部几个常量表

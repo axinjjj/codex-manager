@@ -1,7 +1,7 @@
 # Current Handoff
 
 Last updated: 2026-08-17
-Verified against: master 33ff166（本地与 GitHub 一致）
+Verified against: master 8f0279b（改动前本地与 GitHub 一致）
 
 ## Current state
 
@@ -11,6 +11,8 @@ Verified against: master 33ff166（本地与 GitHub 一致）
 
 ## Recently completed（2026-08-17）
 
+- 翻译结果按原文 SHA-256 指纹缓存在本地；同原文再次翻译直接命中缓存，原文变化才请求翻译代理
+- 「你的 Skills」中每个用户 Skill 都有单独删除按钮；删除整个 Skill 目录进入隔离区，可原位恢复
 - 本地目录从没有 git 的毛坯接入仓库：克隆官方结构 + 合入本地新改进
 - 管理器新增技能标签（havenskill/vpsskill/memoryskill）和路径感知描述
 - 补回仓库缺失的 `零件箱/库存仪表盘.html`（没它仪表盘打不开）
@@ -22,12 +24,12 @@ Verified against: master 33ff166（本地与 GitHub 一致）
 
 ## Known issues
 
-- 暂无（screenshot 重复嫌疑已排查：只有 docs/ 一份）
+- Windows 无法创建文件名含 `< >` 的测试夹具，因此 `test_inventory_encodes_filesystem_names_before_embedding_them` 在 Windows 建夹具时失败；与管理器运行及本次两项功能无关
 
 ## Next safe step
 
-docs/待办.md 里的两个功能：翻译缓存、skill 单独删除按钮。
+暂无待办；接新需求前先确认工作树和运行中的管理器版本。
 
 ## Do not lose
 
-- 隔离区永不入库；改代码前先停掉正在运行的管理器；发布前确认没有私人数据
+- 隔离区和翻译缓存永不入库；改代码前先停掉正在运行的管理器；发布前确认没有私人数据

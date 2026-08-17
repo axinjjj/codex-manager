@@ -5,6 +5,7 @@ import tempfile
 import threading
 import time
 import unittest
+from unittest import mock
 import urllib.error
 import urllib.request
 
@@ -36,6 +37,7 @@ class ManagerContractTests(unittest.TestCase):
             open_browser=False,
             quarantine=self.home / 'quarantine',
         )
+        manager.TRANSLATE_CACHE = str(self.home / 'translation-cache.json')
         self.server = manager.http.server.ThreadingHTTPServer(('127.0.0.1', 0), manager.H)
         self.thread = threading.Thread(target=self.server.serve_forever, daemon=True)
         self.thread.start()
@@ -177,6 +179,64 @@ class ManagerContractTests(unittest.TestCase):
         self.assertTrue(body['ok'])
         self.assertFalse((self.root / 'tmp' / 'leftover.md').exists())
         self.assertEqual(len(list((self.home / 'quarantine').iterdir())), 1)
+
+    def test_translation_cache_reuses_same_text_and_misses_changed_text(self):
+        class TranslationResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_):
+                return False
+
+            def read(self):
+                return json.dumps({
+                    'choices': [{'message': {'content': '缓存译文'}}]
+                }).encode('utf-8')
+
+        with mock.patch.object(manager.urllib.request, 'urlopen', return_value=TranslationResponse()) as call:
+            first = manager.do_translate('same source', 'zh')
+
+        self.assertTrue(first['ok'])
+        self.assertFalse(first['cached'])
+        self.assertEqual(call.call_count, 1)
+        self.assertTrue(Path(manager.TRANSLATE_CACHE).is_file())
+
+        with mock.patch.object(manager.urllib.request, 'urlopen', side_effect=AssertionError('cache miss')):
+            second = manager.do_translate('same source', 'zh')
+
+        self.assertTrue(second['ok'])
+        self.assertTrue(second['cached'])
+        self.assertEqual(second['text'], '缓存译文')
+
+        with mock.patch.object(manager.urllib.request, 'urlopen', side_effect=urllib.error.URLError('offline')):
+            changed = manager.do_translate('changed source', 'zh')
+
+        self.assertFalse(changed['ok'])
+        self.assertIn('翻译引擎没响应', changed['error'])
+
+    def test_user_skill_delete_moves_whole_skill_to_quarantine_and_restores_it(self):
+        manager.configure_runtime(
+            root=self.root,
+            read_only=False,
+            open_browser=False,
+            quarantine=self.home / 'quarantine',
+        )
+
+        status, body = self.request_json('/api/delete', {'path': 'skills/demo-skill'})
+        self.assertEqual(status, 200)
+        self.assertTrue(body['ok'])
+        self.assertFalse((self.root / 'skills' / 'demo-skill').exists())
+
+        status, body = self.request_json('/api/quarantine')
+        self.assertEqual(status, 200)
+        self.assertEqual(len(body['items']), 1)
+        self.assertEqual(body['items'][0]['orig'], 'skills/demo-skill')
+        quarantined_name = body['items'][0]['file']
+
+        status, body = self.request_json('/api/restore', {'file': quarantined_name})
+        self.assertEqual(status, 200)
+        self.assertTrue(body['ok'])
+        self.assertTrue((self.root / 'skills' / 'demo-skill' / 'SKILL.md').is_file())
 
     def test_macos_launchers_default_to_management_and_scan_only_inventory(self):
         manager_launcher = (

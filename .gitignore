@@ -1,5 +1,6 @@
 __pycache__/
 *.py[cod]
 
-???/
+Codex管理器/零件箱/隔离区（删错了来这捞）/
+Codex管理器/零件箱/翻译缓存.json*
 *.lnk
