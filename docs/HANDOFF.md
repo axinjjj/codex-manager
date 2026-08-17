@@ -22,7 +22,7 @@ Verified against: master 33ff166（本地与 GitHub 一致）
 
 ## Known issues
 
-- `docs/screenshot.png` 和 `零件箱/screenshot.png` 疑似重复，未来清理时确认
+- 暂无（screenshot 重复嫌疑已排查：只有 docs/ 一份）
 
 ## Next safe step
 
