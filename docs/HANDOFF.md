@@ -1,7 +1,7 @@
 # Current Handoff
 
-Last updated: 2026-08-17
-Verified against: master 8f0279b（改动前本地与 GitHub 一致）
+Last updated: 2026-08-19
+Last verified feature commit: master 25b9d35（功能验证提交，本地与 GitHub 均存在）
 
 ## Current state
 
