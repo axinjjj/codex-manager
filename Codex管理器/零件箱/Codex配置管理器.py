@@ -255,7 +255,7 @@ HTML = r'''<!DOCTYPE html>
       <div id="skerr" style="font-size:13px;margin:8px 0;min-height:18px"></div>
       <div style="text-align:right"><button class="primary" onclick="createSkill()" style="padding:10px 36px;font-size:14px">保存</button></div>
     </div>    <div id="pane-trash" class="hidden">
-      <div style="color:#8a90a0;font-size:13px;margin-bottom:8px">删掉的东西都在这儿躺着，7 天后自动彻底删除。恢复 = 放回原位。</div>
+      <div style="color:#8a90a0;font-size:13px;margin-bottom:8px">删掉的东西都在这儿躺着；打开回收站时，超过 7 天的内容会自动彻底删除。恢复 = 放回原位。</div>
       <div id="trashout"></div>
     </div>
   </div>
@@ -473,7 +473,7 @@ async function createSkill(){
   box.innerHTML='读取中…';
   const d=await api('/api/quarantine');
   if(!d.items.length){box.innerHTML='<div style="color:#6ee7b7;padding:20px">回收站是空的 ✨</div>';return;}
-  box.innerHTML='<div style="margin:10px 0;color:#8a90a0;font-size:12px">共 '+d.items.length+' 项 ｜ 超过 7 天自动彻底删除'+(appMeta.readOnly?' ｜ 当前只读，不会自动清理':' ｜ <button class="danger grpbtn" id="bEmpty">全部清空</button>')+'</div>'
+  box.innerHTML='<div style="margin:10px 0;color:#8a90a0;font-size:12px">共 '+d.items.length+' 项 ｜ 打开回收站时自动清掉超过 7 天的内容'+(appMeta.readOnly?' ｜ 当前只读，不会自动清理':' ｜ <button class="danger grpbtn" id="bEmpty">全部清空</button>')+'</div>'
     + d.items.map(it=>'<div class="row"><span class="nm">'+(it.isDir?'📁 ':'📄 ')+esc(it.orig)+' <span style="color:#667;font-size:11px">删于 '+esc(it.ts)+' ｜ 剩 '+it.daysLeft+' 天</span></span><span class="prov">'+(it.size/1024).toFixed(1)+'KB</span>'+(appMeta.readOnly?'':'<button class="primary grpbtn" data-r="'+esc(it.file)+'">恢复</button><button class="danger grpbtn" data-d="'+esc(it.file)+'">彻底删</button>')+'</div>').join('');
   box.querySelectorAll('button[data-r]').forEach(b=>b.onclick=async()=>{const r=await api('/api/restore',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file:b.dataset.r})});toast(r.ok?'已恢复到原位置':('恢复失败：'+r.error));loadTrash();});
   box.querySelectorAll('button[data-d]').forEach(b=>b.onclick=async()=>{if(!confirm('彻底删除，捞不回来，确定？'))return;const r=await api('/api/purge_item',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({file:b.dataset.d})});toast(r.ok?'已彻底删除':('失败：'+r.error));loadTrash();});
