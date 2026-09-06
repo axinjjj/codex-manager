@@ -35,7 +35,7 @@ Last verified feature commit: master 25b9d35（功能验证提交，本地与 Gi
 
 ## Next safe step
 
-将已验证的 `codex/github-ci` 分支合入 `master`；如需把 CI 设为合并门禁，再单独配置 GitHub 分支保护规则。
+GitHub Actions CI 已在 `master` 生效；如需把 CI 设为合并门禁，再单独配置 GitHub 分支保护规则。
 
 ## Do not lose
 
