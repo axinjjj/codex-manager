@@ -1,6 +1,6 @@
 # Current Handoff
 
-Last updated: 2026-08-19
+Last updated: 2026-09-06
 Last verified feature commit: master 25b9d35（功能验证提交，本地与 GitHub 均存在）
 
 ## Current state
@@ -8,6 +8,12 @@ Last verified feature commit: master 25b9d35（功能验证提交，本地与 Gi
 - 本地文件夹 `桌面\项目台\Codex库存仪表盘` 已连体 GitHub 公开仓库 axinjjj/codex-manager（master）
 - 管理器正常运行的路径：`Codex管理器/manager.bat`，地址 http://127.0.0.1:8799/
 - 桌面「Codex 管理器」图标用 8.3 短路径指向新位置，已验证可用
+- GitHub Actions CI 位于 `.github/workflows/ci.yml`；推送和 PR 会在 Ubuntu + Python 3.14 上运行语法检查及完整契约测试
+
+## Recently completed（2026-09-06）
+
+- 新增只读权限的 GitHub Actions CI，自动执行管理器语法检查和 `tests/test_manager.py`
+- CI 使用 Ubuntu 执行完整测试，以覆盖 Windows 无法创建的 `< >` 文件名安全夹具
 
 ## Recently completed（2026-08-17）
 
@@ -24,11 +30,11 @@ Last verified feature commit: master 25b9d35（功能验证提交，本地与 Gi
 
 ## Known issues
 
-- Windows 无法创建文件名含 `< >` 的测试夹具，因此 `test_inventory_encodes_filesystem_names_before_embedding_them` 在 Windows 建夹具时失败；与管理器运行及本次两项功能无关
+- Windows 无法创建文件名含 `< >` 的测试夹具，因此 `test_inventory_encodes_filesystem_names_before_embedding_them` 在 Windows 建夹具时失败；CI 在 Ubuntu 上执行完整测试
 
 ## Next safe step
 
-暂无待办；接新需求前先确认工作树和运行中的管理器版本。
+确认 `codex/github-ci` 分支首次 CI 运行通过；如需把 CI 设为合并门禁，再单独配置 GitHub 分支保护规则。
 
 ## Do not lose
 
