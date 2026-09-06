@@ -14,6 +14,7 @@ Last verified feature commit: master 25b9d35（功能验证提交，本地与 Gi
 
 - 新增只读权限的 GitHub Actions CI，自动执行管理器语法检查和 `tests/test_manager.py`
 - CI 使用 Ubuntu 执行完整测试，以覆盖 Windows 无法创建的 `< >` 文件名安全夹具
+- CI 功能提交 `2b9aab8` 的首次 GitHub Actions 运行已通过
 
 ## Recently completed（2026-08-17）
 
@@ -34,7 +35,7 @@ Last verified feature commit: master 25b9d35（功能验证提交，本地与 Gi
 
 ## Next safe step
 
-确认 `codex/github-ci` 分支首次 CI 运行通过；如需把 CI 设为合并门禁，再单独配置 GitHub 分支保护规则。
+将已验证的 `codex/github-ci` 分支合入 `master`；如需把 CI 设为合并门禁，再单独配置 GitHub 分支保护规则。
 
 ## Do not lose
 
